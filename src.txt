@@ -1,0 +1,107 @@
+// HyperDual.h
+#ifndef HYPERDUAL_H
+#define HYPERDUAL_H
+
+#include <iostream>
+
+template <typename T>
+class Hyperdual {
+public:
+    Hyperdual();
+    Hyperdual(T val);
+    Hyperdual(T val, double dual);
+    Hyperdual(const Hyperdual<T>& other);
+    Hyperdual(const Hyperdual<T>& a, double b);
+
+    T getValue() const;
+    T getDualPart() const;
+
+    Hyperdual<T> operator+(const Hyperdual<T>& other) const;
+    Hyperdual<T> operator-(const Hyperdual<T>& other) const;
+    Hyperdual<T> operator*(const Hyperdual<T>& other) const;
+    Hyperdual<T> operator/(const Hyperdual<T>& other) const;
+
+    bool operator==(const Hyperdual<T>& other) const;
+    bool operator!=(const Hyperdual<T>& other) const;
+
+    friend std::ostream& operator<<(std::ostream& os, const Hyperdual<T>& h) {
+        os << h.getValue() << " + " << h.getDualPart() << "ε";
+        return os;
+    }
+
+private:
+    T value;
+    T dual_part;
+};
+
+#endif // HYPERDUAL_H
+
+
+#include "HyperDual.h"
+
+// HyperDual.cpp
+// This file is included in the HyperDual.h header
+// to keep the template implementation separate
+
+// Constructor implementations
+template <typename T>
+Hyperdual<T>::Hyperdual() : value(0), dual_part(0) {}
+
+template <typename T>
+Hyperdual<T>::Hyperdual(T val) : value(val), dual_part(0) {}
+
+template <typename T>
+Hyperdual<T>::Hyperdual(T val, double dual) : value(val), dual_part(dual) {}
+
+template <typename T>
+Hyperdual<T>::Hyperdual(const Hyperdual<T>& other) : value(other.value), dual_part(other.dual_part) {}
+
+// Other method implementations
+template <typename T>
+T Hyperdual<T>::getValue() const {
+    return value;
+}
+
+template <typename T>
+T Hyperdual<T>::getDualPart() const {
+    return dual_part;
+}
+
+template <typename T>
+Hyperdual<T> Hyperdual<T>::operator+(const Hyperdual<T>& other) const {
+    return Hyperdual(value + other.value, dual_part + other.dual_part);
+}
+
+template <typename T>
+Hyperdual<T> Hyperdual<T>::operator-(const Hyperdual<T>& other) const {
+    return Hyperdual(value - other.value, dual_part - other.dual_part);
+}
+
+template <typename T>
+Hyperdual<T> Hyperdual<T>::operator*(const Hyperdual<T>& other) const {
+    return Hyperdual(value * other.value, value * other.dual_part + dual_part * other.value);
+}
+
+template <typename T>
+Hyperdual<T> Hyperdual<T>::operator/(const Hyperdual<T>& other) const {
+    double denom = other.value;
+     return Hyperdual(value / other.value, (dual_part * other.value - value * other.dual_part) / denom);
+}
+
+template <typename T>
+bool Hyperdual<T>::operator==(const Hyperdual<T>& other) const {
+    return (value == other.value) && (dual_part == other.dual_part);
+}
+
+template <typename T>
+bool Hyperdual<T>::operator!=(const Hyperdual<T>& other) const {
+    return !(*this == other);
+}
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Hyperdual<T>& h) {
+    os << h.getValue() << " + " << h.getDualPart() << "ε";
+    return os;
+}
+
+
