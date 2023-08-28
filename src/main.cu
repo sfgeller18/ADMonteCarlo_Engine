@@ -3,6 +3,10 @@
 #include <HestonProcess.h>
 #include "HyperComplex.hpp"
 #include <mpfr.h>
+#include <fstream>
+#include <cstdlib>
+#include <unistd.h> 
+#include "ProcessGrapher.hpp"
 
 #define CHECK_CUDA_ERROR(val) check((val), #val, __FILE__, __LINE__)
 template <typename T>
@@ -60,6 +64,22 @@ int main() {
     mpfr_free_str(str);
     mpfr_clear(x);
 
+    double initialPosition = 100.0;
+    double kappa = 1.0;
+    double theta = 0.2;
+    double initVol = 0.2;
+    double zeta = 0.3;
+    double mu = 0.05;
+    double timeStep = 0.01;
+    int numSteps = 100;
+
+    HestonProcess process(initialPosition, kappa, theta, initVol, zeta, mu);
+
+    std::cout << "Initial HestonProcess Properties:" << std::endl;
+    process.printProperties();
+    std::cout << "-----------------------------" << std::endl;
+
+    printEvolution(process, timeStep, numSteps, "time_evolution.csv");    
     return EXIT_SUCCESS;
 
 }

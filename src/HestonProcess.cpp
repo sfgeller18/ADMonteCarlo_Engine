@@ -33,3 +33,5 @@ void HestonProcess::printProperties() const {
     std::cout << "Zeta: " << volatility.getVariance() << std::endl;
     std::cout << "Volatility: " << volatility.getPosition() << std::endl;
 }
+
+

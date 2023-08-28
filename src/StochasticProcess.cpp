@@ -10,6 +10,14 @@ StochasticProcess::StochasticProcess(double _initialPosition, double _drift, dou
     this->generator = std::default_random_engine();
 }
 
+StochasticProcess::StochasticProcess(const StochasticProcess& other) {
+    this->currentPosition = other.currentPosition;
+    this->drift = other.drift;
+    this->variance = other.variance;
+    this->distribution = other.distribution;
+    this->generator = other.generator;
+}
+
 void StochasticProcess::step(double stepValue) {
     currentPosition *= std::exp(stepValue);
 }

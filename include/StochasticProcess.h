@@ -4,7 +4,7 @@
 class StochasticProcess {
 public:
     StochasticProcess(double initialPosition = 0, double drift = 0.0, double variance = 1.0);
-
+    StochasticProcess(const StochasticProcess& other);
     void step(double stepValue);
 
     double getPosition() const;
