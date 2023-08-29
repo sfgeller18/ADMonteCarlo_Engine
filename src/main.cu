@@ -67,7 +67,7 @@ int main() {
     double initialPosition = 100.0;
     double kappa = 1.0;
     double theta = 0.2;
-    double initVol = 0.2;
+    double initVol = 0.05;
     double zeta = 0.3;
     double mu = 0.05;
     double timeStep = 0.01;

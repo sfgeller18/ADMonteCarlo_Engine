@@ -19,12 +19,11 @@ StochasticProcess HestonProcess::getVolatility() {
 }
 
 void HestonProcess::HestonStep(double timeStep) {
-    double epsilon = (this->distribution)(this->generator);
+    double sample = (this->distribution)(this->generator);
     double sqrtTimeStep = std::sqrt(timeStep);
-    double value = kappa * (theta - (this->volatility).getPosition()) * timeStep + volatility.getVariance() * std::sqrt(volatility.getPosition() * timeStep) * epsilon;
+    double value = kappa * (theta - (this->volatility).getPosition()) * timeStep + volatility.getVariance() * std::sqrt(volatility.getPosition() * timeStep) * sample;
     (this->volatility).setPosition((this->volatility).getPosition()+value);
-    std::cout<<(this->volatility).getPosition()<<"\n";
-    double randomStep = std::sqrt((this->volatility).getPosition()) * sqrtTimeStep * epsilon + this->getDrift()*timeStep;
+    double randomStep = std::sqrt((this->volatility).getPosition()) * sqrtTimeStep * sample + this->getDrift()*timeStep;
     this->currentPosition*=std::exp(randomStep);
 }
 
