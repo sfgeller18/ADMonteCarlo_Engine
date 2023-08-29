@@ -79,7 +79,7 @@ int main() {
     process.printProperties();
     std::cout << "-----------------------------" << std::endl;
 
-    printEvolution(process, timeStep, numSteps, "time_evolution.csv");    
+    printHestonEvolution(process, timeStep, numSteps, "time_evolution.csv");    
     return EXIT_SUCCESS;
 
 }

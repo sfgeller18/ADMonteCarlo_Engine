@@ -15,6 +15,7 @@ public:
     double getRandomStep(double timeStep);
     void printProperties() const;
 
+
 protected:
     double currentPosition;
     double drift;

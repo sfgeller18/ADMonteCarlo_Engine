@@ -14,13 +14,18 @@ HestonProcess::HestonProcess(double _currentPosition, double _kappa, double _the
      this->volatility = _volatility; 
 }
 
-void HestonProcess::step(double timeStep) {
-    double epsilon = distribution(generator);
+StochasticProcess HestonProcess::getVolatility() {
+    return volatility;
+}
+
+void HestonProcess::HestonStep(double timeStep) {
+    double epsilon = (this->distribution)(this->generator);
     double sqrtTimeStep = std::sqrt(timeStep);
-    double value = std::max(kappa * (theta - volatility.getPosition()) * timeStep + volatility.getVariance() * std::sqrt(volatility.getPosition() * timeStep) * epsilon, 0.0);
-    volatility.setPosition(value);
-    double randomStep = volatility.getPosition() * sqrtTimeStep * epsilon + getDrift();
-    StochasticProcess::step(randomStep);
+    double value = std::max(kappa * (theta - (this->volatility).getPosition()) * timeStep + volatility.getVariance() * std::sqrt(volatility.getPosition() * timeStep) * epsilon, 0.0);
+    (this->volatility).setPosition(value);
+    double randomStep = std::sqrt((this->volatility).getPosition()) * sqrtTimeStep * epsilon + this->getDrift()*timeStep;
+    std::cout<<randomStep<<"\n";
+    this->currentPosition+=randomStep;
 }
 
 void HestonProcess::printProperties() const {
@@ -33,5 +38,4 @@ void HestonProcess::printProperties() const {
     std::cout << "Zeta: " << volatility.getVariance() << std::endl;
     std::cout << "Volatility: " << volatility.getPosition() << std::endl;
 }
-
 
