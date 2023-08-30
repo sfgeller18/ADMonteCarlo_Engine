@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include <random>
 
 class StochasticProcess {
@@ -17,11 +18,9 @@ public:
 
 
 protected:
-    double currentPosition;
-    double drift;
-    double variance;
+    double currentPosition = 0.0;
+    double drift = 0.0;
+    double variance = 0.0;
     std::default_random_engine generator;
     std::normal_distribution<double> distribution;
 };
-
-

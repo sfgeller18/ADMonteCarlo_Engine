@@ -1,6 +1,5 @@
 #include "StochasticProcess.h"
-#include <iostream>
-#include <random>
+
 
 StochasticProcess::StochasticProcess(double _initialPosition, double _drift, double _variance) {
     this->currentPosition = _initialPosition;
@@ -54,5 +53,3 @@ void StochasticProcess::printProperties() const {
     std::cout << "Variance: " << this->variance << std::endl;
 
 }
-
-

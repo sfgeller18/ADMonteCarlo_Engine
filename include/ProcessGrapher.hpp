@@ -105,7 +105,10 @@ static void printHestonEvolution(const HestonProcess& process, double timeStep, 
         outputFile.close();
 
          const char* gnuplotScriptPath = "/home/sfgeller18/projects/ADMonteCarlo_Engine/src/plot_script.gp"; // Replace with actual path
-
+        
+        std::ofstream clearScriptFile(gnuplotScriptPath, std::ios::trunc); // Open the script in write mode to clear its contents
+        clearScriptFile.close();
+        
         // Modify the Gnuplot script to plot the data
         std::ofstream plotScriptFile(gnuplotScriptPath, std::ios::app); // Open the script in append mode
         if (plotScriptFile.is_open()) {
@@ -130,6 +133,5 @@ static void printHestonEvolution(const HestonProcess& process, double timeStep, 
             std::cerr << "Failed to execute the Gnuplot script." << std::endl;
                 exit(1);
         }
-        std::ofstream clearScriptFile(gnuplotScriptPath, std::ios::trunc); // Open the script in write mode to clear its contents
-        clearScriptFile.close();
+
     }

@@ -3,7 +3,7 @@
 #include <random>
 #include <iostream>
 
-HestonProcess::HestonProcess(double _currentPosition, double _kappa, double _theta, double _init_vol, double _zeta, double _mu) {
+HestonProcess::HestonProcess(double _currentPosition, double _mu, double _init_vol, double _kappa, double _theta, double _zeta) {
     StochasticProcess _volatility(_init_vol, 0.0, _zeta);
     this->currentPosition = _currentPosition;
     this->drift = _mu;
@@ -13,6 +13,14 @@ HestonProcess::HestonProcess(double _currentPosition, double _kappa, double _the
      this->theta = _theta;
      this->volatility = _volatility; 
 }
+
+HestonProcess::HestonProcess(double _currentPosition, double _mu, double _init_vol) {
+    this->currentPosition = _currentPosition;
+    this->drift = _mu;
+    StochasticProcess _volatility(_init_vol, 0.0, 0.0);
+    this-> volatility = _volatility; 
+}
+
 
 StochasticProcess HestonProcess::getVolatility() {
     return volatility;
