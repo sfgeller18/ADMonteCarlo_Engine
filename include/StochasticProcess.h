@@ -2,25 +2,30 @@
 #include <iostream>
 #include <random>
 
+#include <mpfr.h>
+#include <random>
+
 class StochasticProcess {
 public:
-    StochasticProcess(double initialPosition = 0, double drift = 0.0, double variance = 1.0);
+    StochasticProcess(const mpfr_t initialPosition, const mpfr_t drift, const mpfr_t variance);
     StochasticProcess(const StochasticProcess& other);
-    void step(double stepValue);
+    StochasticProcess();
+    void step(const mpfr_t stepValue);
 
-    double getPosition() const;
-    void setPosition(double value);
-    double getDrift() const;
-    double getVariance() const;
-    void setVariance(double value);
-    double getRandomStep(double timeStep);
+    const mpfr_t* getPosition() const;
+    void setPosition(const mpfr_t value);
+    const mpfr_t* getDrift() const;
+    const mpfr_t* getVariance() const;
+    void setVariance(const mpfr_t value);
+    mpfr_t* getRandomStep(const mpfr_t timeStep);
     void printProperties() const;
+    double getRand();
 
 
 protected:
-    double currentPosition = 0.0;
-    double drift = 0.0;
-    double variance = 0.0;
+    mpfr_t currentPosition;
+    mpfr_t drift;
+    mpfr_t variance;
     std::default_random_engine generator;
     std::normal_distribution<double> distribution;
 };

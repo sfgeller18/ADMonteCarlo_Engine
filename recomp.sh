@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# Clean up the current directory
-rm -rf build
-
-mkdir build
-
 # Run CMake to generate build files in a 'build' directory
 cmake -B build
 

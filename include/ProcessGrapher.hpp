@@ -1,7 +1,10 @@
     #include <unistd.h>
     #include "StochasticProcess.h"
+    #include "mpfr_helpers.hpp"
+
+    #define precision 12
     
-    static void printEvolution(const StochasticProcess& process, double timeStep, int numSteps, std::string file_name) {
+    static void printEvolution(const StochasticProcess& process, const mpfr_t timeStep, int numSteps, std::string file_name) {
         const char* outputDir = "../output";
         std::string file = std::string(outputDir).append("/"+file_name);
         const char* filePath = file.c_str();
@@ -29,11 +32,18 @@
 
         // Print the evolution over time steps
         for (int i = 0; i < numSteps; ++i) {
-            double jump = mapped.getRandomStep(timeStep);
+            mpfr_t jump;
+            mpfr_init2(jump, precision); // Initialize with a specified precision
+            mpfr_set(jump, *mapped.getRandomStep(timeStep), MPFR_RNDN);
             mapped.step(jump);
+            mpfr_t temp;
+            mpfr_init2(temp, precision);
+            mpfr_set_d(temp, i, MPFR_RNDN);
+            mpfr_mul(temp, temp, timeStep, MPFR_RNDN);
             // Print values to the file
-            outputFile << i * timeStep << "," << mapped.getPosition() << ","
-                       << mapped.getDrift() << "," << mapped.getVariance() << "\n";
+            outputFile << mpfrToString(temp) << "," << mpfrToString(*mapped.getPosition()) << ","<< mpfrToString(*mapped.getDrift()) << "," << mpfrToString(*mapped.getVariance()) << "\n";
+            mpfr_clear(jump);
+            mpfr_clear(temp);
         }
 
         outputFile.close();
@@ -68,7 +78,7 @@
         clearScriptFile.close();
     }
 
-static void printHestonEvolution(const HestonProcess& process, double timeStep, int numSteps, std::string file_name) {
+static void printHestonEvolution(const HestonProcess& process, const mpfr_t timeStep, int numSteps, std::string file_name) {
         const char* outputDir = "../output";
         std::string file = std::string(outputDir).append("/"+file_name);
         const char* filePath = file.c_str();
@@ -95,11 +105,17 @@ static void printHestonEvolution(const HestonProcess& process, double timeStep, 
         outputFile << "Time Step,Position,Drift,Variance\n";
 
         // Print the evolution over time steps
-        for (int i = 0; i < numSteps; ++i) {
+        for (int i = 1; i < numSteps; ++i) {
+            mapped.volStep(timeStep);
             mapped.HestonStep(timeStep);
+            mpfr_t temp;
+            mpfr_init2(temp, precision);
+            mpfr_set_si(temp, i, MPFR_RNDN);
+            mpfr_mul(temp, temp, timeStep, MPFR_RNDN);
             // Print values to the file
-            outputFile << i * timeStep << "," << mapped.getPosition() << ","
-                       << (mapped.getVolatility()).getPosition() << "," << mapped.getVariance() << "\n";
+            outputFile << mpfrToString(temp) << "," << mpfrToString(*mapped.getPosition()) << ","
+                       << mpfrToString(*(mapped.getVolatility()).getPosition()) << "\n";
+            mpfr_clear(temp);
         }
 
         outputFile.close();
@@ -135,3 +151,4 @@ static void printHestonEvolution(const HestonProcess& process, double timeStep, 
         }
 
     }
+

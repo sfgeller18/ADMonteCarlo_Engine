@@ -48,7 +48,7 @@ float measure_performance(T (*bound_function)(cudaStream_t), cudaStream_t stream
     CHECK_CUDA_ERROR(cudaEventCreate(&start));
     CHECK_CUDA_ERROR(cudaEventCreate(&stop));
 
-    for (int i = 0; i < num_warmups; ++i)
+    for (int i{0}; i < num_warmups; ++i)
     {
         bound_function(stream);
     }
@@ -56,7 +56,7 @@ float measure_performance(T (*bound_function)(cudaStream_t), cudaStream_t stream
     CHECK_CUDA_ERROR(cudaStreamSynchronize(stream));
 
     CHECK_CUDA_ERROR(cudaEventRecord(start, stream));
-    for (int i = 0; i < num_repeats; ++i)
+    for (int i{0}; i < num_repeats; ++i)
     {
         bound_function(stream);
     }
@@ -67,7 +67,7 @@ float measure_performance(T (*bound_function)(cudaStream_t), cudaStream_t stream
     CHECK_CUDA_ERROR(cudaEventDestroy(start));
     CHECK_CUDA_ERROR(cudaEventDestroy(stop));
 
-    float const latency = time / num_repeats;
+    float const latency{time / num_repeats};
 
     return latency;
 }
