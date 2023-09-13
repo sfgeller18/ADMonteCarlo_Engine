@@ -1,3 +1,6 @@
+#ifndef DUALNUMBER_H
+#define DUALNUMBER_H
+
 #include <iostream>
 #include "mpfr_helpers.hpp"
 #include <mpfr.h>
@@ -42,11 +45,11 @@ public:
         return dual;
     }
 
-    void setReal(const mpfr_t& _real) {
+    void setReal(mpfr_t& _real) {
         mpfr_set(real, _real, MPFR_RNDN);
     }
-    
-    void setDual(const mpfr_t& _dual) {
+
+    void setDual(mpfr_t& _dual) {
         mpfr_set(dual, _dual, MPFR_RNDN);
     }
 
@@ -77,189 +80,243 @@ public:
         return result;
     }
 
-    // You can implement other operators (e.g., division) similarly
+    DualNumber& operator=(const DualNumber& other) {
+        if (this == &other) {
+            return *this; // Handle self-assignment
+        }
+
+        // Copy the real and dual values from 'other'
+        mpfr_set(real, other.real, MPFR_RNDN);
+        mpfr_set(dual, other.dual, MPFR_RNDN);
+
+        return *this;
+    }
 
     // Print function
     void print() const {
-        std::cout << "Real: " << mpfrToString(real, precision)<< std::endl;
-        std::cout << "Dual: " << mpfrToString(dual, precision)<< std::endl;
+        std::cout << "Real: " << mpfrToString(real, precision) << std::endl;
+        std::cout << "Dual: " << mpfrToString(dual, precision) << std::endl;
     }
+};
+DualNumber exp(DualNumber& x) {
+    DualNumber result;
 
-void exp(DualNumber& x) {
-    mpfr_t exp;
-    mpfr_init2(exp, precision);
-    mpfr_exp(exp, x.getReal(), MPFR_RNDN); // Derivative of exp(x) is exp(x)
-    x.setReal(exp);
-    mpfr_mul(exp, x.getDual(), exp, MPFR_RNDN);
-    x.setDual(exp);
-    mpfr_clear(exp);
+    mpfr_t exp_real, exp_dual;
+    mpfr_init2(exp_real, precision);
+    mpfr_init2(exp_dual, precision);
+
+    mpfr_exp(exp_real, x.getReal(), MPFR_RNDN);
+    mpfr_mul(exp_dual, x.getDual(), exp_real, MPFR_RNDN);
+
+    result.setReal(exp_real);
+    result.setDual(exp_dual);
+
+    mpfr_clear(exp_real);
+    mpfr_clear(exp_dual);
+
+    return result;
 }
 
-void log(DualNumber& x) {
-    mpfr_t one;
-    mpfr_t temp;
+DualNumber log(DualNumber& x) {
+    DualNumber result;
+
+    mpfr_t one, temp;
     mpfr_init2(one, precision);
+    mpfr_init2(temp, precision);
+
     mpfr_set_si(one, 1, MPFR_RNDN);
     mpfr_div(temp, one, x.getReal(), MPFR_RNDN);
-    mpfr_mul(dual, dual, temp, MPFR_RNDN);
-    mpfr_log(x.getReal(), x.getReal(), MPFR_RNDN);
+    mpfr_mul(temp, x.getDual(), temp, MPFR_RNDN);
+    mpfr_log(result.getReal(), x.getReal(), MPFR_RNDN);
+
+    result.setDual(temp);
+
     mpfr_clear(one);
     mpfr_clear(temp);
+
+    return result;
 }
 
-#include <mpfr.h>
+DualNumber pow(DualNumber& x, mpfr_t& y) {
+    DualNumber result;
 
-// Assuming precision is a variable that specifies the precision of the mpfr_t variables.
-
-void pow(DualNumber& x, const mpfr_t& y) {
     mpfr_t real_result, dual_result;
     mpfr_init2(real_result, precision);
     mpfr_init2(dual_result, precision);
 
-    mpfr_pow(real_result, x.getReal(), y, MPFR_RNDN); // f(x) = x^y
-    mpfr_mul(dual_result, x.getDual(), y, MPFR_RNDN); 
+    mpfr_pow(real_result, x.getReal(), y, MPFR_RNDN);
+    mpfr_mul(dual_result, x.getDual(), y, MPFR_RNDN);
     mpfr_div(real_result, real_result, y, MPFR_RNDN);
-    mpfr_mul(dual_result, dual_result, real_result, MPFR_RNDN); // f'(x) = y * x^(y-1) * x_dual
+    mpfr_mul(dual_result, dual_result, real_result, MPFR_RNDN);
 
-    x.setReal(real_result);
-    x.setDual(dual_result);
+    result.setReal(real_result);
+    result.setDual(dual_result);
 
     mpfr_clear(real_result);
     mpfr_clear(dual_result);
+
+    return result;
 }
 
-void cos(DualNumber& x) {
+DualNumber cos(DualNumber& x) {
+    DualNumber result;
+
     mpfr_t cos_result, sin_result;
     mpfr_init2(cos_result, precision);
     mpfr_init2(sin_result, precision);
 
-    mpfr_sin_cos( sin_result, cos_result, x.getReal(), MPFR_RNDN);
-    mpfr_mul(sin_result, sin_result, x.getDual(), MPFR_RNDN); // f'(x) = -sin(x) * x_dual
+    mpfr_sin_cos(sin_result, cos_result, x.getReal(), MPFR_RNDN);
+    mpfr_mul(sin_result, sin_result, x.getDual(), MPFR_RNDN);
     mpfr_neg(sin_result, sin_result, MPFR_RNDN);
 
-    x.setReal(cos_result);
-    x.setDual(sin_result);
+    result.setReal(cos_result);
+    result.setDual(sin_result);
 
     mpfr_clear(cos_result);
     mpfr_clear(sin_result);
+
+    return result;
 }
 
-void sin(DualNumber& x) {
+DualNumber sin(DualNumber& x) {
+    DualNumber result;
+
     mpfr_t sin_result, cos_result;
     mpfr_init2(sin_result, precision);
     mpfr_init2(cos_result, precision);
 
-    mpfr_sin_cos(sin_result, cos_result, x.getReal(), MPFR_RNDN); // f(x) = sin(x)
-    mpfr_mul(cos_result, cos_result, x.getDual(), MPFR_RNDN); // f'(x) = cos(x) * x_dual
+    mpfr_sin_cos(sin_result, cos_result, x.getReal(), MPFR_RNDN);
+    mpfr_mul(cos_result, cos_result, x.getDual(), MPFR_RNDN);
 
-    x.setReal(sin_result);
-    x.setDual(cos_result);
+    result.setReal(sin_result);
+    result.setDual(cos_result);
 
     mpfr_clear(sin_result);
     mpfr_clear(cos_result);
+
+    return result;
 }
 
-void tan(DualNumber& x) {
+DualNumber tan(DualNumber& x) {
+    DualNumber result;
+
     mpfr_t real_result, dual_result;
     mpfr_init2(real_result, precision);
     mpfr_init2(dual_result, precision);
 
-    mpfr_tan(real_result, x.getReal(), MPFR_RNDN); // f(x) = tan(x)
+    mpfr_tan(real_result, x.getReal(), MPFR_RNDN);
     mpfr_sec(dual_result, x.getReal(), MPFR_RNDN);
     mpfr_pow_si(dual_result, dual_result, 2, MPFR_RNDN);
-    mpfr_mul(dual_result, dual_result, x.getDual(), MPFR_RNDN); // f'(x) = sec^2(x) * x_dual
+    mpfr_mul(dual_result, dual_result, x.getDual(), MPFR_RNDN);
 
-    x.setReal(real_result);
-    x.setDual(dual_result);
+    result.setReal(real_result);
+    result.setDual(dual_result);
 
     mpfr_clear(real_result);
     mpfr_clear(dual_result);
+
+    return result;
 }
 
-void acos(DualNumber& x) {
-    mpfr_t real_result, dual_result;
+DualNumber acos(DualNumber& x) {
+    DualNumber result;
+
+    mpfr_t real_result, dual_result, one_minus_x_squared;
     mpfr_init2(real_result, precision);
     mpfr_init2(dual_result, precision);
-
-    mpfr_acos(real_result, x.getReal(), MPFR_RNDN); // f(x) = acos(x)
-    
-    mpfr_t one_minus_x_squared;
     mpfr_init2(one_minus_x_squared, precision);
+
+    mpfr_acos(real_result, x.getReal(), MPFR_RNDN);
+
     mpfr_pow_si(one_minus_x_squared, x.getReal(), 2, MPFR_RNDN);
     mpfr_neg(one_minus_x_squared, one_minus_x_squared, MPFR_RNDN);
-    mpfr_add_si(one_minus_x_squared,  one_minus_x_squared, 1, MPFR_RNDN); // 1 - x^2
-    mpfr_sqrt(one_minus_x_squared, one_minus_x_squared, MPFR_RNDN); // sqrt(1 - x^2)
-    mpfr_div(dual_result, x.getDual(), one_minus_x_squared, MPFR_RNDN); // f'(x) = -x_dual / sqrt(1 - x^2)
+    mpfr_add_si(one_minus_x_squared, one_minus_x_squared, 1, MPFR_RNDN);
+    mpfr_sqrt(one_minus_x_squared, one_minus_x_squared, MPFR_RNDN);
+
+    mpfr_div(dual_result, x.getDual(), one_minus_x_squared, MPFR_RNDN);
     mpfr_neg(dual_result, dual_result, MPFR_RNDN);
 
-    x.setReal(real_result);
-    x.setDual(dual_result);
+    result.setReal(real_result);
+    result.setDual(dual_result);
 
     mpfr_clear(real_result);
     mpfr_clear(one_minus_x_squared);
     mpfr_clear(dual_result);
+
+    return result;
 }
 
+DualNumber asin(DualNumber& x) {
+    DualNumber result;
 
-void asin(DualNumber& x) {
-    mpfr_t real_result, dual_result;
+    mpfr_t real_result, dual_result, one_minus_x_squared;
     mpfr_init2(real_result, precision);
     mpfr_init2(dual_result, precision);
-
-    mpfr_asin(real_result, x.getReal(), MPFR_RNDN); // f(x) = asin(x)
-    mpfr_t one_minus_x_squared;
     mpfr_init2(one_minus_x_squared, precision);
+
+    mpfr_asin(real_result, x.getReal(), MPFR_RNDN);
+
     mpfr_pow_si(one_minus_x_squared, x.getReal(), 2, MPFR_RNDN);
     mpfr_neg(one_minus_x_squared, one_minus_x_squared, MPFR_RNDN);
-    mpfr_add_si(one_minus_x_squared,  one_minus_x_squared, 1, MPFR_RNDN); // 1 - x^2
-    mpfr_sqrt(one_minus_x_squared, one_minus_x_squared, MPFR_RNDN); // sqrt(1 - x^2)
-    mpfr_div(dual_result, x.getDual(), one_minus_x_squared, MPFR_RNDN); // f'(x) = 1 / sqrt(1 - x^2) * x_dual
+    mpfr_add_si(one_minus_x_squared, one_minus_x_squared, 1, MPFR_RNDN);
+    mpfr_sqrt(one_minus_x_squared, one_minus_x_squared, MPFR_RNDN);
 
-    x.setReal(real_result);
-    x.setDual(dual_result);
+    mpfr_div(dual_result, x.getDual(), one_minus_x_squared, MPFR_RNDN);
+
+    result.setReal(real_result);
+    result.setDual(dual_result);
 
     mpfr_clear(one_minus_x_squared);
     mpfr_clear(real_result);
     mpfr_clear(dual_result);
+
+    return result;
 }
 
-void atan(DualNumber& x) {
-    mpfr_t real_result, dual_result;
+DualNumber atan(DualNumber& x) {
+    DualNumber result;
+
+    mpfr_t real_result, dual_result, one_plus_x_squared;
     mpfr_init2(real_result, precision);
     mpfr_init2(dual_result, precision);
-
-    mpfr_atan(real_result, x.getReal(), MPFR_RNDN); // f(x) = atan(x)
-    mpfr_t one_plus_x_squared;
     mpfr_init2(one_plus_x_squared, precision);
-    mpfr_pow_si(one_plus_x_squared, x.getReal(), 2, MPFR_RNDN);
-    mpfr_add_si(one_plus_x_squared,  one_plus_x_squared, 1, MPFR_RNDN); // 1 + x^2
-    mpfr_sqrt(one_plus_x_squared, one_plus_x_squared, MPFR_RNDN); // sqrt(1 + x^2)
-    mpfr_div(dual_result, x.getDual(), one_plus_x_squared, MPFR_RNDN); // f'(x) = 1 / sqrt(1 + x^2) * x_dual
 
-    x.setReal(real_result);
-    x.setDual(dual_result);
+    mpfr_atan(real_result, x.getReal(), MPFR_RNDN);
+
+    mpfr_pow_si(one_plus_x_squared, x.getReal(), 2, MPFR_RNDN);
+    mpfr_add_si(one_plus_x_squared, one_plus_x_squared, 1, MPFR_RNDN);
+    mpfr_sqrt(one_plus_x_squared, one_plus_x_squared, MPFR_RNDN);
+    mpfr_div(dual_result, x.getDual(), one_plus_x_squared, MPFR_RNDN);
+
+    result.setReal(real_result);
+    result.setDual(dual_result);
 
     mpfr_clear(one_plus_x_squared);
     mpfr_clear(real_result);
     mpfr_clear(dual_result);
+
+    return result;
 }
 
-void sqrt(DualNumber& x) {
+DualNumber sqrt(DualNumber& x) {
+    DualNumber result;
+
     mpfr_t real_result, dual_result;
     mpfr_init2(real_result, precision);
     mpfr_init2(dual_result, precision);
 
-    mpfr_sqrt(real_result, x.getReal(), MPFR_RNDN); // f(x) = sqrt(x)
-    mpfr_div(dual_result, x.getDual(), real_result, MPFR_RNDN); // f'(x) = 1 / (2 * sqrt(x)) * x_dual
+    mpfr_sqrt(real_result, x.getReal(), MPFR_RNDN);
+    mpfr_div(dual_result, x.getDual(), real_result, MPFR_RNDN);
     mpfr_div_si(dual_result, dual_result, 2, MPFR_RNDN);
     mpfr_mul(dual_result, dual_result, x.getDual(), MPFR_RNDN);
 
-    x.setReal(real_result);
-    x.setDual(dual_result);
+    result.setReal(real_result);
+    result.setDual(dual_result);
 
     mpfr_clear(real_result);
     mpfr_clear(dual_result);
+
+    return result;
 }
 
-
-};
+#endif

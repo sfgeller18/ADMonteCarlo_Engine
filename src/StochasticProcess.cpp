@@ -1,16 +1,22 @@
 #include "StochasticProcess.h"
-#include <iostream>
-#include <cmath>
 
-#define precision 12
-#define SET_PRECISION(var) mpfr_init2(var, precision)
+
 
 StochasticProcess::StochasticProcess(const mpfr_t _initialPosition, const mpfr_t _drift, const mpfr_t _variance) {
     mpfr_init_set(currentPosition, _initialPosition, MPFR_RNDN);
     mpfr_init_set(drift, _drift, MPFR_RNDN);
     mpfr_init_set(variance, _variance, MPFR_RNDN);
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     this->distribution = std::normal_distribution<double>(0.0, mpfr_get_d(_variance, MPFR_RNDN));
-    this->generator = std::default_random_engine();
+    this->generator = std::default_random_engine(seed);
+}
+
+StochasticProcess::StochasticProcess(const mpfr_t _initialPosition, const mpfr_t _drift, const mpfr_t _variance, double seed) {
+    mpfr_init_set(currentPosition, _initialPosition, MPFR_RNDN);
+    mpfr_init_set(drift, _drift, MPFR_RNDN);
+    mpfr_init_set(variance, _variance, MPFR_RNDN);
+    this->distribution = std::normal_distribution<double>(0.0, mpfr_get_d(_variance, MPFR_RNDN));
+    this->generator = std::default_random_engine(seed);
 }
 
 StochasticProcess::StochasticProcess(const StochasticProcess& other) {
@@ -33,6 +39,9 @@ StochasticProcess::StochasticProcess() {
     mpfr_init_set(variance, one, MPFR_RNDN);
     mpfr_clear(zero);
     mpfr_clear(one);
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    this->distribution = std::normal_distribution<double>(0.0, mpfr_get_d(variance, MPFR_RNDN));
+    this->generator = std::default_random_engine(seed);
 }
 
 void StochasticProcess::step(const mpfr_t stepValue) {
@@ -73,10 +82,10 @@ double StochasticProcess::getRand() {
 mpfr_t* StochasticProcess::getRandomStep(const mpfr_t timeStep) {
     double sample = this->getRand();
     mpfr_t sample_mpfr;
-    SET_PRECISION(sample_mpfr);
+    mpfr_init2(sample_mpfr, precision);
     mpfr_set_d(sample_mpfr, sample, MPFR_RNDN);
     mpfr_t randomStep;
-    SET_PRECISION(randomStep);
+    mpfr_init2(randomStep, precision);
     mpfr_t sqrt_vol;
     mpfr_init2(sqrt_vol, precision);
     mpfr_sqrt(sqrt_vol, variance, MPFR_RNDN);

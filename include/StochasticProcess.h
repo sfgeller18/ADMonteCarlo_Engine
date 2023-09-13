@@ -1,13 +1,16 @@
 #pragma once
 #include <iostream>
 #include <random>
-
 #include <mpfr.h>
 #include <random>
+#include <chrono>
+
+#define precision 12
 
 class StochasticProcess {
 public:
     StochasticProcess(const mpfr_t initialPosition, const mpfr_t drift, const mpfr_t variance);
+    StochasticProcess(const mpfr_t initialPosition, const mpfr_t drift, const mpfr_t variance, double seed);
     StochasticProcess(const StochasticProcess& other);
     StochasticProcess();
     void step(const mpfr_t stepValue);

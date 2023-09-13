@@ -1,12 +1,12 @@
-#pragma once
-
-#include "StochasticProcess.h"
+#ifndef HESTON_PROCESS_H
+#define HESTON_PROCESS_H
 
 #include "StochasticProcess.h"
 
 class HestonProcess : public StochasticProcess {
 public:
     HestonProcess(const mpfr_t _currentPosition, const mpfr_t _mu, const mpfr_t _init_vol, const mpfr_t _kappa, const mpfr_t _theta, const mpfr_t _zeta);
+    HestonProcess(const mpfr_t _currentPosition, const mpfr_t _mu, const mpfr_t _init_vol, const mpfr_t _kappa, const mpfr_t _theta, const mpfr_t _zeta, double seed);
     HestonProcess(const mpfr_t _currentPosition, const mpfr_t _mu, const mpfr_t _init_vol);
     void volStep(const mpfr_t timeStep);
     void HestonStep(const mpfr_t timeStep);
@@ -21,5 +21,6 @@ private:
     StochasticProcess volatility;
 };
 
+#endif
 
 

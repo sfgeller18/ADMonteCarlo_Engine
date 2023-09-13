@@ -5,17 +5,17 @@
 #include <iostream>
 #include <string>
 
-std::string mpfrToString(const mpfr_t& value, int precision) {
+std::string mpfrToString(const mpfr_t& value, int prec) {
     char* decimalStr = nullptr;
 
     // Determine the size of the buffer needed
-    size_t size = mpfr_snprintf(NULL, 0, "%.*Rf", precision, value);
+    size_t size = mpfr_snprintf(NULL, 0, "%.*Rf", prec, value);
 
     // Allocate memory for the buffer
     decimalStr = (char*)malloc(size + 1); // +1 for null terminator
 
     // Format the mpfr variable to the buffer with the desired precision
-    mpfr_snprintf(decimalStr, size + 1, "%.*Rf", precision, value);
+    mpfr_snprintf(decimalStr, size + 1, "%.*Rf", prec, value);
 
     std::string result(decimalStr);
 

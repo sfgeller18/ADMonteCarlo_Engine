@@ -3,7 +3,7 @@
     #include "mpfr_helpers.hpp"
 
     #define precision 12
-    
+
     static void printEvolution(const StochasticProcess& process, const mpfr_t timeStep, int numSteps, std::string file_name) {
         const char* outputDir = "../output";
         std::string file = std::string(outputDir).append("/"+file_name);

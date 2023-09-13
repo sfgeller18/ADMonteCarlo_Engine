@@ -11,3 +11,7 @@ make
 
 # Run the compiled executable
 ./ADMC
+
+gimp ../output/simulation_plot.png
+
+cd scripts

@@ -6,6 +6,7 @@
 #include <unistd.h> 
 #include "duals.hpp"
 #include "ProcessGrapher.hpp"
+#include "cuda_runtime.h"
 
 
 // CUDA kernel for vector addition
@@ -17,6 +18,13 @@ __global__ void vectorAdd(int *a, int *b, int *c, int n) {
 }
 
 int main() {
+//Check MPFR is working properly
+mpfr_t x;
+mpfr_init2(x, 128);
+mpfr_set_d(x, 2.0, MPFR_RNDN);
+mpfr_sqrt(x, x, MPFR_RNDN);
+std::cout << "Square root of 2.0 is approximately " << mpfrToString(x, 128) << std::endl;
+mpfr_clear(x);  // Clear x
 
     mpfr_t a, b;
     mpfr_init_set_d(a, 2.0, MPFR_RNDN); // Real part
@@ -36,24 +44,6 @@ int main() {
 
     mpfr_clear(a);
     mpfr_clear(b);
-
-mpfr_t x;
-mpfr_init2(x, 128);
-
-// Set the value of x to 2.0
-mpfr_set_d(x, 2.0, MPFR_RNDN);
-
-// Calculate the square root of x
-mpfr_sqrt(x, x, MPFR_RNDN);
-
-// Print the result
-mpfr_exp_t exp;
-char* str = mpfr_get_str(NULL, &exp, 10, 0, x, MPFR_RNDN);
-std::cout << "Square root of 2.0 is approximately " << str << " x 2^" << exp << std::endl;
-
-// Clean up
-mpfr_free_str(str);
-mpfr_clear(x);  // Clear x
 
 mpfr_t initialPosition;
 mpfr_t kappa;

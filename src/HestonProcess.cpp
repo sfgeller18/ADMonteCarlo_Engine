@@ -3,8 +3,6 @@
 #include <cmath>
 #include <random>
 
-#define precision 12
-#define SET_PRECISION(var) mpfr_init2(var, precision)
 
 HestonProcess::HestonProcess(const mpfr_t _currentPosition, const mpfr_t _mu, const mpfr_t _init_vol, const mpfr_t _kappa, const mpfr_t _theta, const mpfr_t _zeta) {
     mpfr_init_set(currentPosition, _currentPosition, MPFR_RNDN);
@@ -17,8 +15,25 @@ HestonProcess::HestonProcess(const mpfr_t _currentPosition, const mpfr_t _mu, co
     mpfr_set_d(zero, 0.0, MPFR_RNDN);
     StochasticProcess _volatility(_init_vol, zero, _zeta);
     volatility = _volatility;
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     distribution = std::normal_distribution<double>(0.0, 1.0);
-    generator = std::default_random_engine();
+    generator = std::default_random_engine(seed);
+    mpfr_clear(zero);
+}
+
+HestonProcess::HestonProcess(const mpfr_t _currentPosition, const mpfr_t _mu, const mpfr_t _init_vol, const mpfr_t _kappa, const mpfr_t _theta, const mpfr_t _zeta, double seed) {
+    mpfr_init_set(currentPosition, _currentPosition, MPFR_RNDN);
+    mpfr_init_set(drift, _mu, MPFR_RNDN);
+    mpfr_init_set(sigma, _init_vol, MPFR_RNDN);
+    mpfr_init_set(kappa, _kappa, MPFR_RNDN);
+    mpfr_init_set(theta, _theta, MPFR_RNDN);
+    mpfr_t zero;
+    mpfr_init2(zero, precision);
+    mpfr_set_d(zero, 0.0, MPFR_RNDN);
+    StochasticProcess _volatility(_init_vol, zero, _zeta);
+    volatility = _volatility;
+    distribution = std::normal_distribution<double>(0.0, 1.0);
+    generator = std::default_random_engine(seed);
     mpfr_clear(zero);
 }
 
@@ -33,8 +48,9 @@ HestonProcess::HestonProcess(const mpfr_t _currentPosition, const mpfr_t _mu, co
     mpfr_init_set(theta, zero, MPFR_RNDN);
     StochasticProcess _volatility(_init_vol, zero, zero);
     volatility = _volatility;
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     distribution = std::normal_distribution<double>(0.0, 1.0);
-    generator = std::default_random_engine();
+    generator = std::default_random_engine(seed);
     mpfr_clear(zero);
 }
 
