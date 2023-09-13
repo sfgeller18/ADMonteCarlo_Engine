@@ -6,7 +6,6 @@
 #include <string>
 
 std::string mpfrToString(const mpfr_t& value, int precision) {
-    mpfr_exp_t exponent;
     char* decimalStr = nullptr;
 
     // Determine the size of the buffer needed

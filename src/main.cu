@@ -4,7 +4,7 @@
 #include <mpfr.h>
 #include <fstream>
 #include <unistd.h> 
-#include "HyperComplex.hpp"
+#include "duals.hpp"
 #include "ProcessGrapher.hpp"
 
 
@@ -18,7 +18,25 @@ __global__ void vectorAdd(int *a, int *b, int *c, int n) {
 
 int main() {
 
-    
+    mpfr_t a, b;
+    mpfr_init_set_d(a, 2.0, MPFR_RNDN); // Real part
+    mpfr_init_set_d(b, 1.0, MPFR_RNDN); // Dual part
+
+    DualNumber dual_a(a, b);
+
+    DualNumber dual_b;
+    mpfr_set_d(b, 3.0, MPFR_RNDN); // Change the dual part
+    dual_b.setReal(a);
+    dual_b.setDual(b);
+
+    DualNumber result = dual_a * dual_b;
+
+    std::cout << "Result:" << std::endl;
+    result.print();
+
+    mpfr_clear(a);
+    mpfr_clear(b);
+
 mpfr_t x;
 mpfr_init2(x, 128);
 
