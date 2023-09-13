@@ -41,7 +41,7 @@
             mpfr_set_d(temp, i, MPFR_RNDN);
             mpfr_mul(temp, temp, timeStep, MPFR_RNDN);
             // Print values to the file
-            outputFile << mpfrToString(temp) << "," << mpfrToString(*mapped.getPosition()) << ","<< mpfrToString(*mapped.getDrift()) << "," << mpfrToString(*mapped.getVariance()) << "\n";
+            outputFile << mpfrToString(temp, precision) << "," << mpfrToString(*mapped.getPosition(), precision) << ","<< mpfrToString(*mapped.getDrift(), precision) << "," << mpfrToString(*mapped.getVariance(), precision) << "\n";
             mpfr_clear(jump);
             mpfr_clear(temp);
         }
@@ -102,7 +102,7 @@ static void printHestonEvolution(const HestonProcess& process, const mpfr_t time
         }
 
         // Print headers for the values
-        outputFile << "Time Step,Position,Drift,Variance\n";
+        outputFile << "Time Step,Position,Variance\n";
 
         // Print the evolution over time steps
         for (int i = 1; i < numSteps; ++i) {
@@ -113,8 +113,8 @@ static void printHestonEvolution(const HestonProcess& process, const mpfr_t time
             mpfr_set_si(temp, i, MPFR_RNDN);
             mpfr_mul(temp, temp, timeStep, MPFR_RNDN);
             // Print values to the file
-            outputFile << mpfrToString(temp) << "," << mpfrToString(*mapped.getPosition()) << ","
-                       << mpfrToString(*(mapped.getVolatility()).getPosition()) << "\n";
+            outputFile << mpfrToString(temp, precision) << "," << mpfrToString(*mapped.getPosition(), precision) << ","
+                       << mpfrToString(*(mapped.getVolatility()).getPosition(), precision) << "\n";
             mpfr_clear(temp);
         }
 
@@ -125,30 +125,42 @@ static void printHestonEvolution(const HestonProcess& process, const mpfr_t time
         std::ofstream clearScriptFile(gnuplotScriptPath, std::ios::trunc); // Open the script in write mode to clear its contents
         clearScriptFile.close();
         
-        // Modify the Gnuplot script to plot the data
-        std::ofstream plotScriptFile(gnuplotScriptPath, std::ios::app); // Open the script in append mode
-        if (plotScriptFile.is_open()) {
-            // Add commands to plot the data
-             plotScriptFile << "set term png\n";
-            plotScriptFile << "set output '../output/simulation_plot.png'\n";
-            plotScriptFile << "set datafile separator \",\"\n";
-            plotScriptFile << "plot \"" << filePath << "\" every::1 using 1:2 with lines title 'Position'\n";
-            // Add more plot commands as needed
-            plotScriptFile.close();
-        } else {
-            std::cerr << "Failed to open Gnuplot script file." << std::endl;
-            exit(1);
-        }
-        
-        // Run the Gnuplot script
-        std::string command = "gnuplot ";
-        command += gnuplotScriptPath;
-        int returnValue = std::system(command.c_str());
+// Modify the Gnuplot script to plot the data
+// Modify the Gnuplot script to plot the data
+std::ofstream plotScriptFile(gnuplotScriptPath, std::ios::app); // Open the script in append mode
+if (plotScriptFile.is_open()) {
+    // Add commands to plot the data
+    plotScriptFile << "set term png\n";
+    plotScriptFile << "set output '../output/simulation_plot.png'\n";
+    plotScriptFile << "set datafile separator \",\"\n";
+    
+    // Plot the first data series (Position) with the left y-axis (y1)
+    plotScriptFile << "set ytics nomirror\n";
+    plotScriptFile << "set ylabel 'Position' font 'Arial, 12'\n";
+    plotScriptFile << "plot \"" << filePath << "\" every::1 using 1:2 with lines title 'Position' lw 2 lt 1 axis x1y1\n";
+    
+    // Plot the third data series (Variance) with the right y-axis (y2)
+    plotScriptFile << "set y2tics nomirror\n";
+    plotScriptFile << "set y2label 'Variance' font 'Arial, 12'\n";
+    plotScriptFile << "plot \"" << filePath << "\" every::1 using 1:3 with lines title 'Variance' lw 2 lt 2 axis x1y2\n";
+    
+    // Add more plot commands as needed
+    
+    plotScriptFile.close();
+} else {
+    std::cerr << "Failed to open Gnuplot script file." << std::endl;
+    exit(1);
+}
+// Run the Gnuplot script
+std::string command = "gnuplot ";
+command += gnuplotScriptPath;
+int returnValue = std::system(command.c_str());
 
-        if (returnValue != 0) {
-            std::cerr << "Failed to execute the Gnuplot script." << std::endl;
-                exit(1);
-        }
+if (returnValue != 0) {
+    std::cerr << "Failed to execute the Gnuplot script." << std::endl;
+    exit(1);
+}
+
 
     }
 
