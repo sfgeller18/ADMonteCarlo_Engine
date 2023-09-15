@@ -18,7 +18,31 @@ __global__ void vectorAdd(int *a, int *b, int *c, int n) {
 }
 
 int main() {
-//Check MPFR is working properly
+
+    mpfr_t myFloat;
+    mpfr_init_set_d(myFloat, 1.0, MPFR_RNDN);  // Replace 123.456 with your desired float
+    mpfr_prec_t prec = mpfr_get_prec(myFloat);
+    std::cout<<"Decimal"<<mpfrToString(myFloat, prec)<<std::endl;
+    mpz_t mantissa;
+    mpz_init(mantissa);
+    // Initialize DeviceMpfr object and convert mpfr_t to DeviceMpfr
+    DeviceMpfr deviceVar(myFloat);
+    mpfr_get_mantissa(myFloat, mantissa);
+    std::cout << "Mantissa: " << mpz_get_str(nullptr, 10, mantissa) << std::endl;
+
+    // Convert DeviceMpfr back to mpfr_t
+    mpfr_t myFloatConverted;
+    mpfr_init(myFloatConverted);
+    deviceVar.deviceMpfrToMpfr(myFloatConverted);
+
+    mpfr_get_mantissa(myFloat, mantissa);
+    std::cout << "Mantissa (Converted): " << mpz_get_str(nullptr, 10, mantissa) << std::endl;
+
+    // Print the mantissa of the converted mpfr_t
+    mpfr_clear(myFloatConverted);
+    mpfr_clear(myFloat);
+    mpz_clear(mantissa);
+
 mpfr_t x;
 mpfr_init2(x, 128);
 mpfr_set_d(x, 2.0, MPFR_RNDN);
@@ -68,7 +92,7 @@ mpfr_set_d(initVol, 0.05, MPFR_RNDN);
 mpfr_set_d(zeta, 0.3, MPFR_RNDN);
 mpfr_set_d(mu, 0.05, MPFR_RNDN);
 mpfr_set_d(timeStep, 0.01, MPFR_RNDN);
-int numSteps = 100;
+int numSteps = 253;
 
 HestonProcess process(initialPosition, mu, initVol, kappa, theta, zeta);
 

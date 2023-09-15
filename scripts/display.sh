@@ -1,5 +1,6 @@
 #!/bin/bash
 
+cd ..
 # Run CMake to generate build files in a 'build' directory
 cmake -B build
 

@@ -1,244 +1,27 @@
-// HyperDual.h
-#ifndef HYPERDUAL_H
-#define HYPERDUAL_H
+struct device_mpfr { 
+    mpfr_prec_t mpfr_prec; 
+    mpfr_exp_t mpfr_exp; 
+    mpz_t mpfr_d; 
+    };
 
-#include <iostream>
-
-template <typename T>
-class Hyperdual {
-public:
-    Hyperdual();
-    Hyperdual(T val);
-    Hyperdual(T val, double dual);
-    Hyperdual(const Hyperdual<T>& other);
-    Hyperdual(const Hyperdual<T>& a, double b);
-
-    T getValue() const;
-    T getDualPart() const;
-
-    Hyperdual<T> operator+(const Hyperdual<T>& other) const;
-    Hyperdual<T> operator-(const Hyperdual<T>& other) const;
-    Hyperdual<T> operator*(const Hyperdual<T>& other) const;
-    Hyperdual<T> operator/(const Hyperdual<T>& other) const;
-
-    bool operator==(const Hyperdual<T>& other) const;
-    bool operator!=(const Hyperdual<T>& other) const;
-
-    friend std::ostream& operator<<(std::ostream& os, const Hyperdual<T>& h) {
-        os << h.getValue() << " + " << h.getDualPart() << "ε";
-        return os;
-    }
-
-private:
-    T value;
-    T dual_part;
-};
-
-#endif // HYPERDUAL_H
-
-
-#include "HyperDual.h"
-
-// HyperDual.cpp
-// This file is included in the HyperDual.h header
-// to keep the template implementation separate
-
-// Constructor implementations
-template <typename T>
-Hyperdual<T>::Hyperdual() : value(0), dual_part(0) {}
-
-template <typename T>
-Hyperdual<T>::Hyperdual(T val) : value(val), dual_part(0) {}
-
-template <typename T>
-Hyperdual<T>::Hyperdual(T val, double dual) : value(val), dual_part(dual) {}
-
-template <typename T>
-Hyperdual<T>::Hyperdual(const Hyperdual<T>& other) : value(other.value), dual_part(other.dual_part) {}
-
-// Other method implementations
-template <typename T>
-T Hyperdual<T>::getValue() const {
-    return value;
+void mpfr_get_mantissa(const mpfr_t& src, mpz_t mantissa) {
+    assert(mantissa != NULL);
+    mpz_t rop;
+    mpz_init(rop);  // Initialize the mpz_t object
+    mpfr_exp_t exp = mpfr_get_z_2exp(rop, src);  // Get mantissa and exponent
+    mpz_set(mantissa, rop);
+    mpz_clear(rop);
 }
 
-template <typename T>
-T Hyperdual<T>::getDualPart() const {
-    return dual_part;
+void mpfr_to_device_mpfr(const mpfr_t& src, device_mpfr* deviceptr) {
+    deviceptr->mpfr_prec = mpfr_get_prec(src);
+    deviceptr->mpfr_exp = mpfr_get_exp(src);
+    mpfr_get_mantissa(src, deviceptr->mpfr_d);
 }
 
-template <typename T>
-Hyperdual<T> Hyperdual<T>::operator+(const Hyperdual<T>& other) const {
-    return Hyperdual(value + other.value, dual_part + other.dual_part);
+void deviceMpfrToMpfr(const device_mpfr* deviceFloat, mpfr_t& result) {
+    // Initialize mpfr_t with the precision of the DeviceMpfr object
+    mpfr_init2(result, deviceFloat->mpfr_prec);
+    mpfr_set_exp(result, deviceFloat->mpfr_exp);
+    mpfr_set_z(result, deviceFloat->mpfr_d, MPFR_RNDN);
 }
-
-template <typename T>
-Hyperdual<T> Hyperdual<T>::operator-(const Hyperdual<T>& other) const {
-    return Hyperdual(value - other.value, dual_part - other.dual_part);
-}
-
-template <typename T>
-Hyperdual<T> Hyperdual<T>::operator*(const Hyperdual<T>& other) const {
-    return Hyperdual(value * other.value, value * other.dual_part + dual_part * other.value);
-}
-
-template <typename T>
-Hyperdual<T> Hyperdual<T>::operator/(const Hyperdual<T>& other) const {
-    double denom = other.value;
-     return Hyperdual(value / other.value, (dual_part * other.value - value * other.dual_part) / denom);
-}
-
-template <typename T>
-bool Hyperdual<T>::operator==(const Hyperdual<T>& other) const {
-    return (value == other.value) && (dual_part == other.dual_part);
-}
-
-template <typename T>
-bool Hyperdual<T>::operator!=(const Hyperdual<T>& other) const {
-    return !(*this == other);
-}
-
-template <typename T>
-std::ostream& operator<<(std::ostream& os, const Hyperdual<T>& h) {
-    os << h.getValue() << " + " << h.getDualPart() << "ε";
-    return os;
-}
-
-
-
-
-    #include <unistd.h>
-    #include "StochasticProcess.h"
-    
-    static void printEvolution(const StochasticProcess& process, double timeStep, int numSteps, std::string file_name) {
-        const char* outputDir = "../output";
-        std::string file = std::string(outputDir).append("/"+file_name);
-        const char* filePath = file.c_str();
-        StochasticProcess mapped(process);
-    // Check if the program has write permission for the output directory
-        if (access(outputDir, W_OK) != 0) {
-                std::cerr << "Error: No write permission for " << outputDir << std::endl;
-            exit(1);
-        }
-
-        // Create and open the output file
-        std::ofstream outputFile(filePath);
-        if (!outputFile.is_open()) {
-            std::cerr << "Failed to open output file." << std::endl;
-            exit(1);
-        }
-
-        if (access(filePath, W_OK) != 0) {
-            std::cerr << "Error: No write permission for " << filePath << std::endl;
-            exit(1);
-        }
-
-        // Print headers for the values
-        outputFile << "Time Step,Position,Drift,Variance\n";
-
-        // Print the evolution over time steps
-        for (int i = 0; i < numSteps; ++i) {
-            double jump = mapped.getRandomStep(timeStep);
-            mapped.step(jump);
-            // Print values to the file
-            outputFile << i * timeStep << "," << mapped.getPosition() << ","
-                       << mapped.getDrift() << "," << mapped.getVariance() << "\n";
-        }
-
-        outputFile.close();
-
-         const char* gnuplotScriptPath = "/home/sfgeller18/projects/ADMonteCarlo_Engine/src/plot_script.gp"; // Replace with actual path
-
-        // Modify the Gnuplot script to plot the data
-        std::ofstream plotScriptFile(gnuplotScriptPath, std::ios::app); // Open the script in append mode
-        if (plotScriptFile.is_open()) {
-            // Add commands to plot the data
-             plotScriptFile << "set term png\n";
-            plotScriptFile << "set output '../output/simulation_plot.png'\n";
-            plotScriptFile << "set datafile separator \",\"\n";
-            plotScriptFile << "plot \"" << filePath << "\" every::1 using 1:2 with lines title 'Position'\n";
-            // Add more plot commands as needed
-            plotScriptFile.close();
-        } else {
-            std::cerr << "Failed to open Gnuplot script file." << std::endl;
-            exit(1);
-        }
-        
-        // Run the Gnuplot script
-        std::string command = "gnuplot ";
-        command += gnuplotScriptPath;
-        int returnValue = std::system(command.c_str());
-
-        if (returnValue != 0) {
-            std::cerr << "Failed to execute the Gnuplot script." << std::endl;
-                exit(1);
-        }
-        std::ofstream clearScriptFile(gnuplotScriptPath, std::ios::trunc); // Open the script in write mode to clear its contents
-        clearScriptFile.close();
-    }
-
-static void printHestonEvolution(const HestonProcess& process, double timeStep, int numSteps, std::string file_name) {
-        const char* outputDir = "../output";
-        std::string file = std::string(outputDir).append("/"+file_name);
-        const char* filePath = file.c_str();
-        HestonProcess mapped(process);
-    // Check if the program has write permission for the output directory
-        if (access(outputDir, W_OK) != 0) {
-                std::cerr << "Error: No write permission for " << outputDir << std::endl;
-            exit(1);
-        }
-
-        // Create and open the output file
-        std::ofstream outputFile(filePath);
-        if (!outputFile.is_open()) {
-            std::cerr << "Failed to open output file." << std::endl;
-            exit(1);
-        }
-
-        if (access(filePath, W_OK) != 0) {
-            std::cerr << "Error: No write permission for " << filePath << std::endl;
-            exit(1);
-        }
-
-        // Print headers for the values
-        outputFile << "Time Step,Position,Drift,Variance\n";
-
-        // Print the evolution over time steps
-        for (int i = 0; i < numSteps; ++i) {
-            mapped.step(timeStep);
-            // Print values to the file
-            outputFile << i * timeStep << "," << mapped.getPosition() << ","
-                       << mapped.getDrift() << "," << mapped.getVariance() << "\n";
-        }
-
-        outputFile.close();
-
-         const char* gnuplotScriptPath = "/home/sfgeller18/projects/ADMonteCarlo_Engine/src/plot_script.gp"; // Replace with actual path
-
-        // Modify the Gnuplot script to plot the data
-        std::ofstream plotScriptFile(gnuplotScriptPath, std::ios::app); // Open the script in append mode
-        if (plotScriptFile.is_open()) {
-            // Add commands to plot the data
-             plotScriptFile << "set term png\n";
-            plotScriptFile << "set output '../output/simulation_plot.png'\n";
-            plotScriptFile << "set datafile separator \",\"\n";
-            plotScriptFile << "plot \"" << filePath << "\" every::1 using 1:2 with lines title 'Position'\n";
-            // Add more plot commands as needed
-            plotScriptFile.close();
-        } else {
-            std::cerr << "Failed to open Gnuplot script file." << std::endl;
-            exit(1);
-        }
-        
-        // Run the Gnuplot script
-        std::string command = "gnuplot ";
-        command += gnuplotScriptPath;
-        int returnValue = std::system(command.c_str());
-
-        if (returnValue != 0) {
-            std::cerr << "Failed to execute the Gnuplot script." << std::endl;
-                exit(1);
-        }
-        std::ofstream clearScriptFile(gnuplotScriptPath, std::ios::trunc); // Open the script in write mode to clear its contents
-        clearScriptFile.close();
-    }

@@ -1,4 +1,3 @@
-
 cmake_minimum_required(VERSION 3.9)
 
 project(ADMC LANGUAGES CUDA CXX)
@@ -21,6 +20,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules")
 find_package(MPFR REQUIRED)
 target_link_libraries(ADMC PRIVATE ${MPFR_LIBRARIES})
 
+# Find GMP
+find_package(GMP REQUIRED)
+target_link_libraries(ADMC PRIVATE ${GMP_LIBRARIES})
 
 # To disable some warnings relating to the HyperComplex class
 target_compile_options(ADMC PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Xcudafe --diag_suppress=186>)
