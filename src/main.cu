@@ -6,7 +6,8 @@
 #include <unistd.h> 
 #include "duals.hpp"
 #include "ProcessGrapher.hpp"
-#include "cuda_runtime.h"
+#include "cuda_kernels.hpp"
+#include "deviceMPFR.hpp"
 
 
 // CUDA kernel for vector addition
@@ -19,29 +20,56 @@ __global__ void vectorAdd(int *a, int *b, int *c, int n) {
 
 int main() {
 
-    mpfr_t myFloat;
-    mpfr_init_set_d(myFloat, 1.0, MPFR_RNDN);  // Replace 123.456 with your desired float
-    mpfr_prec_t prec = mpfr_get_prec(myFloat);
-    std::cout<<"Decimal"<<mpfrToString(myFloat, prec)<<std::endl;
-    mpz_t mantissa;
-    mpz_init(mantissa);
-    // Initialize DeviceMpfr object and convert mpfr_t to DeviceMpfr
-    DeviceMpfr deviceVar(myFloat);
-    mpfr_get_mantissa(myFloat, mantissa);
-    std::cout << "Mantissa: " << mpz_get_str(nullptr, 10, mantissa) << std::endl;
+    cudaSetDevice(0);
 
-    // Convert DeviceMpfr back to mpfr_t
-    mpfr_t myFloatConverted;
-    mpfr_init(myFloatConverted);
-    deviceVar.deviceMpfrToMpfr(myFloatConverted);
+    const int n = 10; // Number of DeviceMpfr objects
 
-    mpfr_get_mantissa(myFloat, mantissa);
-    std::cout << "Mantissa (Converted): " << mpz_get_str(nullptr, 10, mantissa) << std::endl;
+    // Allocate memory on the host and device for DeviceMpfr objects
+    DeviceMpfr* host_ap = new DeviceMpfr[n];
+    DeviceMpfr* host_bp = new DeviceMpfr[n];
+    DeviceMpfr* host_rp = new DeviceMpfr[n];
+    DeviceMpfr* device_ap;
+    DeviceMpfr* device_bp;
+    DeviceMpfr* device_rp;
 
-    // Print the mantissa of the converted mpfr_t
-    mpfr_clear(myFloatConverted);
-    mpfr_clear(myFloat);
-    mpz_clear(mantissa);
+    // Initialize DeviceMpfr objects on the host
+    srand(static_cast<unsigned int>(time(nullptr)));
+    for (int i = 0; i < n; i++) {
+        host_ap[i].prec = 64; // Set precision
+        host_ap[i].mantissa = rand(); // Set a random mantissa
+        host_bp[i].prec = 64; // Set precision
+        host_bp[i].mantissa = rand(); // Set a random mantissa
+    }
+
+    // Allocate memory on the device
+    cudaMalloc((void**)&device_ap, n * sizeof(DeviceMpfr));
+    cudaMalloc((void**)&device_bp, n * sizeof(DeviceMpfr));
+    cudaMalloc((void**)&device_rp, n * sizeof(DeviceMpfr));
+
+    // Copy DeviceMpfr objects from host to device
+    cudaMemcpy(device_ap, host_ap, n * sizeof(DeviceMpfr), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_bp, host_bp, n * sizeof(DeviceMpfr), cudaMemcpyHostToDevice);
+
+    // Launch the kernel
+    int blockSize = 256;
+    int numBlocks = (n + blockSize - 1) / blockSize;
+    device_adder<<<numBlocks, blockSize>>>(device_rp, device_ap, device_bp, n);
+
+    // Copy results back from device to host
+    cudaMemcpy(host_rp, device_rp, n * sizeof(DeviceMpfr), cudaMemcpyDeviceToHost);
+
+    // Print results
+    for (int i = 0; i < n; i++) {
+        std::cout << "Result " << i << ": " << host_rp[i].mantissa << std::endl;
+    }
+
+    // Clean up
+    cudaFree(device_ap);
+    cudaFree(device_bp);
+    cudaFree(device_rp);
+    delete[] host_ap;
+    delete[] host_bp;
+    delete[] host_rp;
 
 mpfr_t x;
 mpfr_init2(x, 128);
