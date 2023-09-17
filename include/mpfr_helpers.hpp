@@ -36,4 +36,5 @@ void mpfr_get_mantissa(const mpfr_t& src, mpz_t mantissa) {
 }
 
 
+
 #endif

@@ -33,7 +33,8 @@ public:
 
     std::string toString() {
         // Convert unsigned long int to string
-        return std::to_string(mantissa);
+        unsigned long int temp = mantissa*pow(2, exponent);
+        return std::to_string(temp);
     }
 
     // ... (Other members and functions as defined earlier)
