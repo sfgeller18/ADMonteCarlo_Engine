@@ -3,5 +3,3 @@
 cd ../build
 
 ./ADMC
-
-cd ../scripts

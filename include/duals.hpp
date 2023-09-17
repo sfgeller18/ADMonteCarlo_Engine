@@ -2,18 +2,15 @@
 #define DUALNUMBER_H
 
 #include <iostream>
-#include "mpfr_helpers.hpp"
-#include <mpfr.h>
+#include <cuda_runtime.h>
 
-#define precision 12
+
+
 
 template <typename T>
-class DualNumber {
-private:
+struct DualNumber {
     T real;
     T dual;
-
-public:
     // Constructors
     DualNumber() : real(0.0), dual(0.0) {}
 
@@ -108,6 +105,12 @@ public:
         return DualNumber<T>(std::atan(x.getReal()), x.getDual() / (1.0 + x.getReal() * x.getReal()));
     }
 };
+
+
+
+
+
+
 
 
 #endif

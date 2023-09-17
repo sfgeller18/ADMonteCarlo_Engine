@@ -15,5 +15,3 @@ make
 
 # Run the compiled executable
 ./ADMC
-
-cd scripts

@@ -1,12 +1,11 @@
 #include <iostream>
 #include <StochasticProcess.h>
 #include <HestonProcess.h>
-#include <mpfr.h>
-#include <fstream>
+#include "ProcessGrapher.hpp"
 #include <unistd.h> 
 #include "duals.hpp"
-#include "ProcessGrapher.hpp"
-#include "cuRandSamples.hpp"
+#include "deviceDualFuncs.cuh"
+#include "cuRandSamples.cuh"
 #include "deviceMPFR.hpp"
 
 # define precision 12
@@ -21,60 +20,45 @@ __global__ void vectorAdd(int *a, int *b, int *c, int n) {
 
 
 int main() {
- cudaEvent_t start, end;
-    cudaEventCreate(&start);
-    cudaEventCreate(&end);
+    const int numElements = 128;
+    const size_t size = numElements * sizeof(DualNumber<double>);
 
-    // Set the number of samples you want to generate
-    const long numSamples = (long)NUM_BLOCKS * NUM_THREADS_PER_BLOCK * NUM_SAMPLES_PER_THREAD * KERNEL_ITERATIONS;
-
-    // Allocate memory for the generated samples on the host
-    double* hostSamples = new double[numSamples];
-
-    // Allocate memory for the generated samples on the device
-    double* deviceSamples;
-    cudaMalloc((void**)&deviceSamples, sizeof(double) * numSamples);
-
-    // Start measuring time
-    cudaEventRecord(start);
-
-    // Generate normal samples on the GPU
-    cudaError_t cudaStatus = CudaNormalSamples(deviceSamples);
-    if (cudaStatus != cudaSuccess) {
-        std::cerr << "CUDA error: " << cudaGetErrorString(cudaStatus) << std::endl;
-        return 1;
+    // Allocate memory on the host and initialize data
+    DualNumber<double>* h_input = new DualNumber<double>[numElements];
+    DualNumber<double>* h_output = new DualNumber<double>[numElements];
+    
+    for (int i = 0; i < numElements; ++i) {
+        h_input[i] = DualNumber<double>(i, 1.0);
     }
 
-    // Stop measuring time
-    cudaEventRecord(end);
-    cudaEventSynchronize(end);
+    // Allocate memory on the device
+    DualNumber<double>* d_input = nullptr;
+    DualNumber<double>* d_output = nullptr;
+    cudaMalloc((void**)&d_input, size);
+    cudaMalloc((void**)&d_output, size);
 
-    // Calculate and display the elapsed time
-    float milliseconds;
-    cudaEventElapsedTime(&milliseconds, start, end);
-    std::cout << "Elapsed Time: " << milliseconds << " ms" << std::endl;
+    // Copy data from host to device
+    cudaMemcpy(d_input, h_input, size, cudaMemcpyHostToDevice);
 
-    // Copy the generated samples from the device to the host
-    cudaMemcpy(hostSamples, deviceSamples, sizeof(double) * numSamples, cudaMemcpyDeviceToHost);
+    // Launch the CUDA kernel
+    int threadsPerBlock = 32;
+    int blocksPerGrid = (numElements + threadsPerBlock - 1) / threadsPerBlock;
+    dual_pow<<<blocksPerGrid, threadsPerBlock>>>(d_input, d_output, numElements, 0.5);
 
-    // Display the first few samples as a test
-    const int numSamplesToShow = 10;
-    std::cout << "Generated Samples:" << std::endl;
-    for (int i = 0; i < numSamplesToShow; ++i) {
-        std::cout << hostSamples[i] << " ";
+    // Copy the result from device to host
+    cudaMemcpy(h_output, d_output, size, cudaMemcpyDeviceToHost);
+
+    // Print the result
+    for (int i = 0; i < numElements; ++i) {
+        std::cout << "Input: (" << h_input[i].real << ", " << h_input[i].dual << "), ";
+        std::cout << "Squared: (" << h_output[i].real << ", " << h_output[i].dual << ")\n";
     }
-    std::cout << std::endl;
 
-    // Clean up memory
-    delete[] hostSamples;
-    cudaFree(deviceSamples);
-
-    // Destroy CUDA events
-    cudaEventDestroy(start);
-    cudaEventDestroy(end);
-
-
-
+    // Clean up
+    delete[] h_input;
+    delete[] h_output;
+    cudaFree(d_input);
+    cudaFree(d_output);
 
 
 

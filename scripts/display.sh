@@ -14,5 +14,3 @@ make
 ./ADMC
 
 gimp ../output/simulation_plot.png
-
-cd scripts

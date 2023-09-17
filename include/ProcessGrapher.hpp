@@ -1,4 +1,8 @@
+    #ifndef GRAPHER_H
+    #define GRAPHER_H
+    
     #include <unistd.h>
+    #include <fstream>
     #include "StochasticProcess.h"
     #include "mpfr_helpers.hpp"
 
@@ -160,7 +164,7 @@ if (returnValue != 0) {
     std::cerr << "Failed to execute the Gnuplot script." << std::endl;
     exit(1);
 }
+}
 
-
-    }
+#endif
 
