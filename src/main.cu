@@ -20,46 +20,43 @@ __global__ void vectorAdd(int *a, int *b, int *c, int n) {
 
 
 int main() {
-    const int numElements = 128;
-    const size_t size = numElements * sizeof(DualNumber<double>);
+      const int numSamples = NUM_BLOCKS * NUM_THREADS_PER_BLOCK * NUM_SAMPLES_PER_THREAD;
+    const int numSamplesToPrint = 20;
 
-    // Allocate memory on the host and initialize data
-    DualNumber<double>* h_input = new DualNumber<double>[numElements];
-    DualNumber<double>* h_output = new DualNumber<double>[numElements];
-    
-    for (int i = 0; i < numElements; ++i) {
-        h_input[i] = DualNumber<double>(i, 1.0);
+    // Allocate host memory to store the random samples
+    double* host_samples = new double[numSamples];
+
+    // Allocate device memory to store the random samples
+    double* device_samples;
+    cudaMalloc(&device_samples, numSamples * sizeof(double));
+
+    // Call the CUDA function to generate random samples
+    cudaError_t cudaStatus = CudaNormalSamples(device_samples);
+
+    if (cudaStatus != cudaSuccess) {
+        std::cerr << "CudaNormalSamples failed with error: " << cudaGetErrorString(cudaStatus) << std::endl;
+        return 1;
     }
 
-    // Allocate memory on the device
-    DualNumber<double>* d_input = nullptr;
-    DualNumber<double>* d_output = nullptr;
-    cudaMalloc((void**)&d_input, size);
-    cudaMalloc((void**)&d_output, size);
+    // Copy the generated samples from the device to the host
+    cudaMemcpy(host_samples, device_samples, numSamples * sizeof(double), cudaMemcpyDeviceToHost);
 
-    // Copy data from host to device
-    cudaMemcpy(d_input, h_input, size, cudaMemcpyHostToDevice);
-
-    // Launch the CUDA kernel
-    int threadsPerBlock = 32;
-    int blocksPerGrid = (numElements + threadsPerBlock - 1) / threadsPerBlock;
-    dual_pow<<<blocksPerGrid, threadsPerBlock>>>(d_input, d_output, numElements, 0.5);
-
-    // Copy the result from device to host
-    cudaMemcpy(h_output, d_output, size, cudaMemcpyDeviceToHost);
-
-    // Print the result
-    for (int i = 0; i < numElements; ++i) {
-        std::cout << "Input: (" << h_input[i].real << ", " << h_input[i].dual << "), ";
-        std::cout << "Squared: (" << h_output[i].real << ", " << h_output[i].dual << ")\n";
+    // Print the first 20 samples
+    std::cout << "First " << numSamplesToPrint << " samples:" << std::endl;
+    for (int i = 0; i < numSamplesToPrint; i++) {
+        std::cout << std::fixed << host_samples[i] << " ";
     }
+    std::cout << std::endl;
 
-    // Clean up
-    delete[] h_input;
-    delete[] h_output;
-    cudaFree(d_input);
-    cudaFree(d_output);
+    double mean, variance;
+    msdArray<<<NUM_BLOCKS, NUM_THREADS_PER_BLOCK>>>(device_samples, numSamples, mean, variance);
+ // Print the calculated mean and standard deviation
+    std::cout << "Mean: " << mean << std::endl;
+    std::cout << "Variance: " << variance << std::endl;
 
+    // Cleanup: Free memory
+    delete[] host_samples;
+    cudaFree(device_samples);
 
 
 return EXIT_SUCCESS;

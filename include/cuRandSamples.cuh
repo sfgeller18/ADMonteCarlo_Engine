@@ -60,6 +60,7 @@ __global__ void generate_normal_samples(double* samples, curandState* states)
 }
 
 
+
 cudaError_t CudaNormalSamples(double* device_samples)
 {
     curandState* states;
@@ -86,5 +87,48 @@ cudaError_t CudaNormalSamples(double* device_samples)
 
     return cudaGetLastError();
 }
+
+// Kernel to calculate the sum of an array
+template <typename T>
+__global__ void msdArray(const T* array, const int numSamples, T& mean, T& sdev ) {
+    extern __shared__ T mdata[];
+    extern __shared__ T sdata[];
+    int tid = threadIdx.x;
+    int idx = blockIdx.x * blockDim.x + tid;
+
+    // Initialize the shared memory with zero
+    sdata[tid] = 0;
+
+    // Calculate the local sum for this thread
+    T localSum = 0;
+    T localSquaredSum = 0;
+    while (idx < numSamples) {
+        localSum += array[idx];
+        localSquaredSum += pow(array[idx], 2);
+        idx += blockDim.x * gridDim.x;
+    }
+
+    // Store the local sum in shared memory
+    mdata[tid] = localSum;
+    sdata[tid] = localSquaredSum;
+
+    // Synchronize threads within the block
+    __syncthreads();
+
+    // Perform parallel reduction on shared memory
+    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+            sdata[tid] += sdata[tid + s];            
+            mdata[tid] += sdata[tid + s];
+        }
+        __syncthreads();
+    }
+
+    mean = mdata[0] / numSamples;
+    sdev = (sdata[0] / numSamples) - pow(mean, 2);
+}
+
+
+// Kernel to calculate the sum of squared differences from the mean
 
 #endif
