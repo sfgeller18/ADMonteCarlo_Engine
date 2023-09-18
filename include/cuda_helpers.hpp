@@ -246,4 +246,5 @@ float host_arr_cor(float* d_vec_1, float* d_vec_2, int n, float *mu1, float *mu2
 
 
 
+
 #endif

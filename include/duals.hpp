@@ -48,17 +48,22 @@ struct DualNumber {
     DualNumber<T> operator*(const DualNumber<T>& other) const {
         return DualNumber<T>(real * other.real, real * other.dual + dual * other.real);
     }
+    DualNumber<T> operator*(const T& other) const {
+        return DualNumber<T>(real * other, dual * other);
+    }
 
     DualNumber<T>& operator=(const DualNumber<T>& other) {
         if (this == &other) {
             return *this; // Handle self-assignment
         }
-
-        // Copy the real and dual values from 'other'
         real = other.real;
         dual = other.dual;
 
         return *this;
+    }
+
+       DualNumber<T> operator/(const T& other) const {
+        return DualNumber<T>(real/other, dual/other);
     }
 
     // Print function

@@ -7,57 +7,56 @@
 #include "deviceDualFuncs.cuh"
 #include "cuRandSamples.cuh"
 #include "deviceMPFR.hpp"
+#include "cuMonteCarlo.hpp"
 
 # define precision 12
 
-// CUDA kernel for vector addition
-__global__ void vectorAdd(int *a, int *b, int *c, int n) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < n) {
-        c[i] = a[i] + b[i];
-    }
-}
+
+
 
 
 int main() {
-      const int numSamples = NUM_BLOCKS * NUM_THREADS_PER_BLOCK * NUM_SAMPLES_PER_THREAD;
-    const int numSamplesToPrint = 20;
 
-    // Allocate host memory to store the random samples
-    double* host_samples = new double[numSamples];
+// Define the option and asset
+OptionType optionType = VanillaCall;
+DualAsset<double> asset;
+asset.S0 = DualNumber<double>(3975, 0);  // Initial stock price with dual part initialized to 0
+asset.K = DualNumber<double>(3975, 0);   // Strike price with dual part initialized to 0
+asset.r = DualNumber<double>(0.048, 0);  // Risk-free interest rate with dual part initialized to 0
+asset.y = DualNumber<double>(0.015, 0);  // Dividend yield with dual part initialized to 0
+asset.T = DualNumber<double>(252, 0);    // Time to expiration in days (252d=1y) with dual part initialized to 0
+asset.sigma = DualNumber<double>(0.2, 0); // Volatility with dual part initialized to 0
 
-    // Allocate device memory to store the random samples
-    double* device_samples;
-    cudaMalloc(&device_samples, numSamples * sizeof(double));
+// Define the number of simulations
+size_t numSimulations = NUM_BLOCKS * NUM_THREADS_PER_BLOCK * NUM_SAMPLES_PER_THREAD;
 
-    // Call the CUDA function to generate random samples
-    cudaError_t cudaStatus = CudaNormalSamples(device_samples);
+// Create an array of DualNumber<double> to store option prices
+DualNumber<double>* optionPrices = new DualNumber<double>[numSimulations];
 
-    if (cudaStatus != cudaSuccess) {
-        std::cerr << "CudaNormalSamples failed with error: " << cudaGetErrorString(cudaStatus) << std::endl;
-        return 1;
-    }
+// Initialize optionPrices with real values and dual parts set to 0
+for (size_t i = 0; i < numSimulations; ++i) {
+    optionPrices[i] = DualNumber<double>(0.0, 0.0);
+}
 
-    // Copy the generated samples from the device to the host
-    cudaMemcpy(host_samples, device_samples, numSamples * sizeof(double), cudaMemcpyDeviceToHost);
+// Call the Monte Carlo simulator
+DualMonteCarloSimulator(optionPrices, optionType, numSimulations, asset);
 
-    // Print the first 20 samples
-    std::cout << "First " << numSamplesToPrint << " samples:" << std::endl;
-    for (int i = 0; i < numSamplesToPrint; i++) {
-        std::cout << std::fixed << host_samples[i] << " ";
-    }
-    std::cout << std::endl;
+// Print the first 10 option prices and their mean
+std::cout << "First 10 Option Prices: ";
+for (int i = 0; i < std::min(10, static_cast<int>(numSimulations)); ++i) {
+    std::cout << optionPrices[i].real << " "; // Print the real part
+}
+std::cout << std::endl;
 
-    double mean, variance;
-    msdArray<<<NUM_BLOCKS, NUM_THREADS_PER_BLOCK>>>(device_samples, numSamples, mean, variance);
- // Print the calculated mean and standard deviation
-    std::cout << "Mean: " << mean << std::endl;
-    std::cout << "Variance: " << variance << std::endl;
+// Compute the mean and variance
+DualNumber<double> mean;
+for (size_t i = 0; i < numSimulations; ++i) {
+    mean = mean + optionPrices[i];
+}
+mean = mean / static_cast<double>(numSimulations);
 
-    // Cleanup: Free memory
-    delete[] host_samples;
-    cudaFree(device_samples);
-
+std::cout << "Price is: " << exp(-asset.r.real * asset.T.real / 252) * mean.real << std::endl;
+std::cout << "Delta is: " << exp(-asset.r.real * asset.T.real / 252) * mean.dual << std::endl;
 
 return EXIT_SUCCESS;
 
