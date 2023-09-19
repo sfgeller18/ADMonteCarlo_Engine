@@ -4,134 +4,80 @@
 # include "duals.hpp"
 #include <cuda_runtime.h>
 
-template <typename T>
-__device__ void dual_pow(DualNumber<T>* input, DualNumber<T>* output, double exponent, int numElements = 1) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx < numElements) {
-        output[idx].real = pow(input[idx].real, exponent);
-        if (exponent != (T)1.0) {
-        output[idx].dual = exponent * pow(input[idx].real, exponent-(T)1.0) * input[idx].dual;
+__device__ void dual_pow(DualNumber<double> input, DualNumber<double> output, double exponent) {
+        output.real = pow(input.real, exponent);
+        if (exponent != 1.0) {output.dual = exponent * pow(input.real, exponent - 1.0) * input.dual;}
+        else {output.dual = input.dual;}
         }
-    }
+
+__device__ void dual_add(const DualNumber<double>* a, const DualNumber<double>* b, DualNumber<double>* result) {
+    result->real = a->real + b->real;
+    result->dual = a->dual + b->dual;
 }
 
-template <typename T>
-__device__ void dual_add(const DualNumber<T>* a, const DualNumber<T>* b, DualNumber<T>* result, int numElements = 1) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx < numElements) {
-        result[idx].real = a[idx].real + b[idx].real;
-        result[idx].dual = a[idx].dual + b[idx].dual;
-    }
+__device__ void dual_sub(const DualNumber<double>* a, const DualNumber<double>* b, DualNumber<double>* result) {
+    result->real = a->real - b->real;
+    result->dual = a->dual - b->dual;
 }
 
-template <typename T>
-__device__ void dual_sub(const DualNumber<T>* a, const DualNumber<T>* b, DualNumber<T>* result, int numElements = 1) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx < numElements) {
-        result[idx].real = a[idx].real - b[idx].real;
-        result[idx].dual = a[idx].dual - b[idx].dual;
-    }
+__device__ void dual_mul(const DualNumber<double>* a, const DualNumber<double>* b, DualNumber<double>* result) {
+    result->real = a->real * b->real;
+    result->dual = a->real * b->dual + a->dual * b->real;
 }
 
-template <typename T>
-__device__ void dual_mul(const DualNumber<T>* a, const DualNumber<T>* b, DualNumber<T>* result, int numElements = 1) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx < numElements) {
-        result[idx].real = a[idx].real * b[idx].real;
-        result[idx].dual = a[idx].real * b[idx].dual + a[idx].dual * b[idx].real;
-    }
+__device__ void scalar_mul(const DualNumber<double>* a, const double& b, DualNumber<double>* result) {
+    result->real = a->real * b;
+    result->dual = a->dual * b;
 }
 
-template <typename T>
-__device__ void scalar_mul(const DualNumber<T>* a, const T& b, DualNumber<T>* result, int numElements = 1) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx < numElements) {
-        result[idx].real = a[idx].real * b;
-        result[idx].dual = a[idx].dual * b;
-    }
+__device__ void dual_div(const DualNumber<double>* a, const DualNumber<double>* b, DualNumber<double>* result) {
+    double b_real_squared = b->real * b->real;
+    result->real = a->real / b->real;
+    result->dual = (a->dual * b->real - a->real * b->dual) / b_real_squared;
 }
 
-template <typename T>
-__device__ void dual_div(const DualNumber<T>* a, const DualNumber<T>* b, DualNumber<T>* result, int numElements = 1) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx < numElements) {
-        T b_real_squared = b[idx].real * b[idx].real;
-        result[idx].real = a[idx].real / b[idx].real;
-        result[idx].dual = (a[idx].dual * b[idx].real - a[idx].real * b[idx].dual) / b_real_squared;
-    }
+__device__ void dual_sin(const DualNumber<double>* input, DualNumber<double>* output) {
+    output->real = sin(input->real);
+    output->dual = cos(input->real) * input->dual;
 }
 
-template <typename T>
-__device__ void dual_sin(const DualNumber<T>* input, DualNumber<T>* output, int numElements = 1) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx < numElements) {
-        output[idx].real = sin(input[idx].real);
-        output[idx].dual = cos(input[idx].real) * input[idx].dual;
-    }
+__device__ void dual_exp(const DualNumber<double>* input, DualNumber<double>* output) {
+    output->real = exp(input->real);
+    output->dual = exp(input->real) * input->dual;
 }
 
-template <typename T>
-__device__ void dual_exp(const DualNumber<T>* input, DualNumber<T>* output, int numElements = 1) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx < numElements) {
-        output[idx].real = exp(input[idx].real);
-        output[idx].dual = exp(input[idx].real) * input[idx].dual;
-    }
+__device__ void dual_cos(const DualNumber<double>* input, DualNumber<double>* output) {
+    output->real = cos(input->real);
+    output->dual = -sin(input->real) * input->dual;
 }
 
-
-template <typename T>
-__device__ void dual_cos(const DualNumber<T>* input, DualNumber<T>* output, int numElements = 1) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx < numElements) {
-        output[idx].real = cos(input[idx].real);
-        output[idx].dual = -sin(input[idx].real) * input[idx].dual;
-    }
+__device__ void dual_tan(const DualNumber<double>* input, DualNumber<double>* output) {
+    double cos_x = cos(input->real);
+    output->real = tan(input->real);
+    output->dual = input->dual / (cos_x * cos_x);
 }
 
-template <typename T>
-__device__ void dual_tan(const DualNumber<T>* input, DualNumber<T>* output, int numElements = 1) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx < numElements) {
-        T cos_x = cos(input[idx].real);
-        output[idx].real = tan(input[idx].real);
-        output[idx].dual = input[idx].dual / (cos_x * cos_x);
-    }
+__device__ void dual_acos(const DualNumber<double>* input, DualNumber<double>* output) {
+    double one_minus_x_squared = 1.0 - input->real * input->real;
+    double sqrt_term = sqrt(one_minus_x_squared);
+
+    output->real = acos(input->real);
+    output->dual = -input->dual / sqrt_term;
 }
 
-template <typename T>
-__device__ void dual_acos(const DualNumber<T>* input, DualNumber<T>* output, int numElements = 1) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx < numElements) {
-        T one_minus_x_squared = 1.0 - input[idx].real * input[idx].real;
-        T sqrt_term = sqrt(one_minus_x_squared);
+__device__ void dual_asin(const DualNumber<double>* input, DualNumber<double>* output) {
+    double one_minus_x_squared = 1.0 - input->real * input->real;
+    double sqrt_term = sqrt(one_minus_x_squared);
 
-        output[idx].real = acos(input[idx].real);
-        output[idx].dual = -input[idx].dual / sqrt_term;
-    }
+    output->real = asin(input->real);
+    output->dual = input->dual / sqrt_term;
 }
 
-template <typename T>
-__device__ void dual_asin(const DualNumber<T>* input, DualNumber<T>* output, int numElements = 1) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx < numElements) {
-        T one_minus_x_squared = 1.0 - input[idx].real * input[idx].real;
-        T sqrt_term = sqrt(one_minus_x_squared);
+__device__ void dual_atan(const DualNumber<double>* input, DualNumber<double>* output) {
+    double one_plus_x_squared = 1.0 + input->real * input->real;
 
-        output[idx].real = asin(input[idx].real);
-        output[idx].dual = input[idx].dual / sqrt_term;
-    }
-}
-
-template <typename T>
-__device__ void dual_atan(const DualNumber<T>* input, DualNumber<T>* output, int numElements = 1) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx < numElements) {
-        T one_plus_x_squared = 1.0 + input[idx].real * input[idx].real;
-
-        output[idx].real = atan(input[idx].real);
-        output[idx].dual = input[idx].dual / one_plus_x_squared;
-    }
+    output->real = atan(input->real);
+    output->dual = input->dual / one_plus_x_squared;
 }
 
 #endif

@@ -19,8 +19,8 @@ int main() {
 
 // Define the option and asset
 OptionType optionType = VanillaCall;
-DualAsset<double> asset;
-asset.S0 = DualNumber<double>(3975, 0);  // Initial stock price with dual part initialized to 0
+DualAsset asset;
+asset.S0 = DualNumber<double>(3975, 1);  // Initial stock price with dual part initialized to 0
 asset.K = DualNumber<double>(3975, 0);   // Strike price with dual part initialized to 0
 asset.r = DualNumber<double>(0.048, 0);  // Risk-free interest rate with dual part initialized to 0
 asset.y = DualNumber<double>(0.015, 0);  // Dividend yield with dual part initialized to 0
