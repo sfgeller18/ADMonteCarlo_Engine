@@ -82,7 +82,7 @@ struct DualNumber {
     }
 
     static DualNumber<T> pow(const DualNumber<T>& x, const T& y) {
-        return DualNumber<T>(std::pow(x.getReal(), y), y * std::pow(x.getReal(), y - 1) * x.getDual());
+        return DualNumber<T>(std::pow(x.real, y), y * std::pow(x.real, y - 1) * x.dual);
     }
 
     static DualNumber<T> cos(const DualNumber<T>& x) {
