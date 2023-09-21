@@ -20,9 +20,9 @@ int main() {
 // Define the option and asset
 OptionType optionType = VanillaCall;
 DualAsset asset;
-asset.S0 = DualNumber<double>(3975, 0);  // Initial stock price with dual part initialized to 0
-asset.K = DualNumber<double>(4200, 0);   // Strike price with dual part initialized to 0
-asset.r = DualNumber<double>(0.048, 1);  // Risk-free interest rate with dual part initialized to 0
+asset.S0 = DualNumber<double>(3975, 1);  // Initial stock price with dual part initialized to 0
+asset.K = DualNumber<double>(3975, 0);   // Strike price with dual part initialized to 0
+asset.r = DualNumber<double>(0.048, 0);  // Risk-free interest rate with dual part initialized to 0
 asset.y = DualNumber<double>(0.015, 0);  // Dividend yield with dual part initialized to 0
 asset.T = DualNumber<double>(252, 0);    // Time to expiration in days (252d=1y) with dual part initialized to 0
 asset.sigma = DualNumber<double>(0.2, 0); // Volatility with dual part initialized to 0

@@ -6,7 +6,7 @@
 
 
 
-
+//Need to add extra stochastic dual variable (i.e. x^3 == 0, E[x] = 0, E[x^2] = dual)
 template <typename T>
 struct DualNumber {
     T real;

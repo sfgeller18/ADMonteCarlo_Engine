@@ -113,7 +113,8 @@ __global__ void DualOptionPricingMC(DualNumber<double>* optionPrices, DualNumber
 
 void DualMonteCarloSimulator(DualNumber<double>* optionPrices, OptionType _optionType, int numSimulations, const DualAsset& _asset) {
     DualNumber<double> dt(_asset.T.real / 252, _asset.T.dual);
-    DualNumber<double> drift(_asset.r.real - _asset.y.real - pow(_asset.sigma.real, 2) / 2, 0);
+    DualNumber<double> drift;
+    drift = _asset.r - _asset.y - DualNumber<double>::pow(_asset.sigma, 2.0)/2;
     DualNumber<double> sqrt_dt(pow(dt.real, 0.5), dt.dual/(2*pow(dt.real, 0.5)));
     DualNumber<double> vol(_asset.sigma * sqrt_dt);
     DualNumber<double>* d_optionPrices = new DualNumber<double>[numSimulations];
