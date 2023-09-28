@@ -111,11 +111,4 @@ struct DualNumber {
     }
 };
 
-
-
-
-
-
-
-
 #endif
