@@ -60,7 +60,7 @@ struct DualNumber {
         return *this;
     }
 
-    constexpr DualNumber<T> operator/(const T& other) const noexcept {
+    constexpr DualNumber<T> operator/(const T& other) const {
         return DualNumber<T>(real / other, dual / other);
     }
 
@@ -75,7 +75,7 @@ struct DualNumber {
         return DualNumber<T>(std::exp(x.getReal()), x.getDual() * std::exp(x.getReal()));
     }
 
-    static constexpr DualNumber<T> log(const DualNumber<T>& x) noexcept {
+    static constexpr DualNumber<T> log(const DualNumber<T>& x) {
         return DualNumber<T>(std::log(x.getReal()), x.getDual() / x.getReal());
     }
 
@@ -91,16 +91,16 @@ struct DualNumber {
         return DualNumber<T>(std::sin(x.getReal()), std::cos(x.getReal()) * x.getDual());
     }
 
-    static constexpr DualNumber<T> tan(const DualNumber<T>& x) noexcept {
+    static constexpr DualNumber<T> tan(const DualNumber<T>& x) {
         T cos_x = std::cos(x.getReal());
         return DualNumber<T>(std::tan(x.getReal()), x.getDual() / (cos_x * cos_x));
     }
 
-    static constexpr DualNumber<T> acos(const DualNumber<T>& x) noexcept {
+    static constexpr DualNumber<T> acos(const DualNumber<T>& x) {
         return DualNumber<T>(std::acos(x.getReal()), -x.getDual() / std::sqrt(1.0 - x.getReal() * x.getReal()));
     }
 
-    static constexpr DualNumber<T> asin(const DualNumber<T>& x) noexcept {
+    static constexpr DualNumber<T> asin(const DualNumber<T>& x) {
         return DualNumber<T>(std::asin(x.getReal()), x.getDual() / std::sqrt(1.0 - x.getReal() * x.getReal()));
     }
 
