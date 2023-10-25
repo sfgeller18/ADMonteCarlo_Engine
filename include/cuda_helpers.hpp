@@ -11,7 +11,6 @@
 #include <utility>
 #include <vector>
 
-
 #define CHECK_CUDA_ERROR(val) check((val), #val, __FILE__, __LINE__)
 template <typename T>
 void check(T err, const char* const func, const char* const file,
@@ -242,7 +241,7 @@ float host_arr_cor(float* d_vec_1, float* d_vec_2, int n, float *mu1, float *mu2
 
     cudaStreamDestroy(stream);
     return cor;
-}
+};
 
 
 

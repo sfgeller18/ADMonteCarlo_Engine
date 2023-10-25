@@ -43,3 +43,9 @@ mpfr_clear(timeStep);
 std::cout << "Final HestonProcess Properties:" << std::endl;
 process.printProperties();
 std::cout << "-----------------------------" << std::endl;
+
+
+
+
+// Define the option and asset
+

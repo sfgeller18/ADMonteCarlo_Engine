@@ -11,31 +11,29 @@ template <typename T>
 struct DualNumber {
     T real;
     T dual;
-    // Constructors
-    DualNumber() : real(0.0), dual(0.0) {}
+    inline DualNumber() : real(0.0), dual(0.0) {}
 
-    DualNumber(const T& real_value, const T& dual_value) : real(real_value), dual(dual_value) {}
+    inline DualNumber(const T& real_value, const T& dual_value) : real(real_value), dual(dual_value) {}
 
     // Copy constructor
-    DualNumber(const DualNumber<T>& other) : real(other.real), dual(other.dual) {}
+    inline DualNumber(const DualNumber<T>& other) : real(other.real), dual(other.dual) {}
 
     // Accessor functions
-    T getReal() const {
+    inline T getReal() const {
         return real;
     }
 
-    T getDual() const {
+    inline T getDual() const {
         return dual;
     }
 
-    void setReal(const T& _real) {
+    inline void setReal(const T& _real) {
         real = _real;
     }
 
-    void setDual(const T& _dual) {
+    inline void setDual(const T& _dual) {
         dual = _dual;
     }
-
    
     constexpr DualNumber<T> operator+(const DualNumber<T>& other) const noexcept {
         return DualNumber<T>(real + other.real, dual + other.dual);
@@ -111,4 +109,7 @@ struct DualNumber {
     }
 };
 
+
+
 #endif
+

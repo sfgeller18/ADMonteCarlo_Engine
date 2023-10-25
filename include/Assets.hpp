@@ -23,6 +23,6 @@ class asset {
         double carry = 0.0;
         std::vector<double> extra_params;
         T forecast_object;
-}
+};
 
 #endif

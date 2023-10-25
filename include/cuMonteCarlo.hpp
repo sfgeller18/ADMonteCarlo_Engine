@@ -111,10 +111,9 @@ __global__ void DualOptionPricingMC(DualNumber<double>* optionPrices, DualNumber
 }
 
 
-void DualMonteCarloSimulator(DualNumber<double>* optionPrices, OptionType _optionType, int numSimulations, const DualAsset& _asset) {
+DualNumber<double> DualMonteCarloSimulator(DualNumber<double>* optionPrices, OptionType _optionType, int numSimulations, const DualAsset& _asset) {
     DualNumber<double> dt(_asset.T.real / 252, _asset.T.dual);
-    DualNumber<double> drift;
-    drift = _asset.r - _asset.y - DualNumber<double>::pow(_asset.sigma, 2.0)/2;
+    DualNumber<double> drift = (_asset.r - _asset.y - DualNumber<double>::pow(_asset.sigma, 2.0)/2);
     DualNumber<double> sqrt_dt(pow(dt.real, 0.5), dt.dual/(2*pow(dt.real, 0.5)));
     DualNumber<double> vol(_asset.sigma * sqrt_dt);
     DualNumber<double>* d_optionPrices = new DualNumber<double>[numSimulations];
@@ -133,10 +132,18 @@ void DualMonteCarloSimulator(DualNumber<double>* optionPrices, OptionType _optio
     DualOptionPricingMC<<<NUM_BLOCKS, NUM_THREADS_PER_BLOCK>>>(d_optionPrices, stockPrices, d_deviceSamples, _asset, _optionType, numSimulations, dt, drift, vol);
     cudaMemcpy(optionPrices, d_optionPrices, numSimulations * sizeof(DualNumber<double>), cudaMemcpyDeviceToHost);
 
+    DualNumber<double> mean;
+    for (size_t i = 0; i < numSimulations; ++i) {
+        mean = mean + optionPrices[i];
+    }
+    mean = mean / (exp(_asset.r.real * _asset.T.real / 252) *static_cast<double>(numSimulations));
+    mean.dual /= _asset.S0.real;
     // Clean up GPU memory
     cudaFree(stockPrices);
     cudaFree(d_optionPrices);
     cudaFree(d_deviceSamples);
+
+    return mean;
 }
    
 
